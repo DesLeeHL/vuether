@@ -20,5 +20,8 @@
   "bugs": {
     "url": "https://github.com/DesLeeHL/vuether/issues"
   },
-  "homepage": "https://github.com/DesLeeHL/vuether#readme"
+  "homepage": "https://github.com/DesLeeHL/vuether#readme",
+  "dependencies": {
+    "axios": "^1.1.3"
+  }
 }

@@ -1,7 +1,8 @@
 # vuether
-Weather Web App built with Vue and OpenWeather API
+## Weather Web App built with Vue and OpenWeather API
 
-npm install element-ui -S
-
-npm install
-npm run dev
+## Start
+###
+`npm install`
+`npm i axios`
+ for API Calls
