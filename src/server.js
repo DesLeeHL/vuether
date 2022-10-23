@@ -1,13 +1,14 @@
-require("dotenv").config()
-const axios = require('axios')
-const express = require('express')
-const { get } = require("http")
-const path = require('path')
+import dotenv  from "dotenv"
+import axios  from "axios"
+import express from "express"
+import path  from "path"
+
+dotenv.config()
 
 const app = express();
 const port = 3000
-const API_key=process.env.OPENWEATHER_API_KEY
-const url='https://api.openweathermap.org/data/2.5'
+const API_key = process.env.OPENWEATHER_API_KEY
+const url = 'https://api.openweathermap.org/data/2.5'
 
 
 
@@ -18,13 +19,13 @@ axios.get(`${url}/forecast?q=${city}&APPID=${API_key}`).then((response) => {
     console.log(response.data)
 })
 
-function getForcast(req,res){
-    let city =req.params.city
+function getForcast(req, res) {
+    let city = req.params.city
     console.log(`Getting weather forecast for ${city}`)
 
-    let forcastSumm={}
-    let willRain=false
-    let forecastSentiment=null
+    let forcastSumm = {}
+    let willRain = false
+    let forecastSentiment = null
 
     axios.get(`${base_url}/forecast?q=${city}&APPID=${API_key}`).then(
         (response) => {
@@ -39,5 +40,4 @@ function getForcast(req,res){
             error: "Bad Request!"
         });
     })
-
 }
