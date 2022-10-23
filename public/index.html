@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- 
+TODO:
+- City Input
+- API Return
+    - Packing: 
+        - umbrealla if there is rain anytime over the next 4-days
+        - Cold - Temp < 12C
+        - Mild - 12C <= Temp <= 24C
+        - Hot - Temp > 24C
+    - Summary of next 4 days showing: 
+        - Temperature
+        - Wind Speed
+        - Rainfall level.
+    - Air Pollution - PM2_5 forecast for the next 5 days
+        - advise the user to wear a mask if PM2_5 > 10
+    - One Innovative Feature 
+
+ -->
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vuether</title>
+    <!-- Include Vue -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <script type="module">
+        import { createApp, ref } from 'vue'
+        import server from './src/server.js'
+        createApp({
+        data() {
+            return {
+                message: '',
+                count: 0,
+                city: '',
+                hasError: false,
+                errorMessage: '',
+                forecastJson: null,
+                willRain: null,
+                temperatureSummary: null,
+                townSearchHistory: []
+            }
+        },
+        methods: {
+            increment() {
+                // update component state
+                this.count++
+            },
+            getWeatherForCity() {
+                console.log(`Getting weather for ${this.city}...`);
+
+                fetch(`http://localhost:3000/forecast/${this.city}`)
+                    .then(response => {
+                        // // First check that there are no errors
+                        if (response.status === 200) return response.json();
+                        else throw Error(response.statusText);
+                    }).then(responseJSON => {
+                        console.log(responseJSON);
+                        this.forecastJson = responseJSON.forecastData;
+                        this.temperatureSummary = responseJSON.temperatureSummary;
+                        this.willRain = responseJSON.willRain;
+
+                        // Reset any errors
+                        this.hasError = false;
+                        this.errorMessage = '';
+                    })
+                    .catch(error => {
+                        console.error(error);
+
+                        // Set error messages
+                        this.hasError = true;
+                        this.errorMessage = `Unable to fetch weather data for ${this.city}`;
+                    });
+            }
+        }
+        }).mount('#app')
+    </script>
+</head>
+
+<body>
+    <div id="app">
+        <h1>Vuether: Vue Weather App</h1>
+        <br />
+        <p>Please enter the city you are seeking the forecast of:</p>
+        <input v-model="city" placeholder="City Name" />
+        <button v-on:click="getWeatherForCity"
+            class="h-10 px-6 font-semibold rounded-full bg-violet-600 text-white">Show me the weather!</button>
+        <span v-if="hasError">
+            <br />
+            <br />
+            <font color="red">{{errorMessage}}</font>
+        </span>
+
+        <!-- Rain Packing Tips -->
+        <div v-if="!hasError && willRain != null">
+            <p>
+                <b>Rain:</b>
+                <span v-if="willRain">There is rain forecast during these dates. You should pack an umberella.</span>
+                <span v-if="!willRain">There is no rain forecast during these dates. No need to pack an umberella!.</span>
+            </p>
+        </div>
+
+        <!-- Weather Sentiment Packing Tips -->
+        <div v-if="!hasError && temperatureSummary != null">
+            <p>
+                <b>Packing:</b>
+                <span v-if="temperatureSummary.sentiment == 'hot'">Temperature range is >20°C. You should pack light
+                    clothes
+                    as to keep cool.</span>
+                <span v-if="temperatureSummary.sentiment == 'warm'">Temperature range is between
+                    {{temperatureSummary.max}}°C and {{temperatureSummary.min}}°C. You should pack both light clothes
+                    with
+                    some extra layers for when it gets colder.</span>
+                <span v-if="temperatureSummary.sentiment == 'cold'">Temperature range is between
+                    {{temperatureSummary.max}}°C and {{temperatureSummary.min}}°C. You should pack warm clothes with
+                    plenty
+                    of insulation to keep warm.</span>
+            </p>
+        </div>
+
+        <table v-if="forecastJson">
+            <thead>
+                <tr>
+                    <th scope="col">Date</th>
+                    <th scope="col">Avg Temperature (°C)</th>
+                    <th scope="col">Avg Wind Speed (m/s)</th>
+                    <th scope="col">Avg PM2_5</th>
+                    <th scope="col">Rainfall Level (mm)</th>
+                    <th scope="col">Min Temperature (°C)</th>
+                    <th scope="col">Max Temperature (°C)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template v-for="(dateEntry, date) in forecastJson">
+                    <tr>
+                        <th scope="row">{{ date }}</th>
+                        <td>{{ dateEntry.averageTemp }}</td>
+                        <td>{{ dateEntry.averageWind }}</td>
+                        <td>{{ dateEntry.averagePM2_5 }}</td>
+                        <td>{{ dateEntry.rainfallLevels }}</td>
+                        <td>{{ dateEntry.temperatureRange.min }}</td>
+                        <td>{{ dateEntry.temperatureRange.max }}</td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+    </div>
+</body>
+
+</html>
