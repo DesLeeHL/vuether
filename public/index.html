@@ -28,121 +28,148 @@ TODO:
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
     <script type="module">
-        import { createApp, ref } from 'vue'
-        import server from './src/server.js'
+        import { createApp } from 'vue'
         createApp({
-        data() {
-            return {
-                message: '',
-                count: 0,
-                city: '',
-                hasError: false,
-                errorMessage: '',
-                forecastJson: null,
-                willRain: null,
-                temperatureSummary: null,
-                townSearchHistory: []
-            }
-        },
-        methods: {
-            increment() {
-                // update component state
-                this.count++
+            data() {
+                return {
+                    message: '',
+                    count: 0,
+                    town: '',
+                    isError: false,
+                    errorMsg: '',
+                    weatherJSON: null,
+                    doesRain: null,
+                    maskAdvised: null,
+                    temperatureAnalysis: null,
+                }
             },
-            getWeatherForCity() {
-                console.log(`Getting weather for ${this.city}...`);
+            methods: {
+                getWeatherForecast() {
+                    console.log(`Requesting weather forecast for ${this.town}...`);
 
-                fetch(`http://localhost:3000/forecast/${this.city}`)
-                    .then(response => {
-                        // // First check that there are no errors
-                        if (response.status === 200) return response.json();
-                        else throw Error(response.statusText);
-                    }).then(responseJSON => {
-                        console.log(responseJSON);
-                        this.forecastJson = responseJSON.forecastData;
-                        this.temperatureSummary = responseJSON.temperatureSummary;
-                        this.willRain = responseJSON.willRain;
+                    fetch(`http://localhost:3000/weather/${this.town}`)
+                        .then((response) => {
+                            // if the response is ok
+                            if (response.status === 200) return response.json();
+                            else throw Error(response.statusText);
+                        }).then(responseJSON => {
+                            console.log(responseJSON);
+                            this.weatherJSON = responseJSON.forecastData;
+                            this.temperatureAnalysis = responseJSON.temperatureAnalysis;
+                            this.doesRain = responseJSON.doesRain;
+                            this.maskAdvised = responseJSON.maskAdvised;
 
-                        // Reset any errors
-                        this.hasError = false;
-                        this.errorMessage = '';
-                    })
-                    .catch(error => {
-                        console.error(error);
+                            // Reset any errors
+                            this.isError = false;
+                            this.errorMsg = '';
+                        })
+                        .catch(error => {
+                            console.error(error);
 
-                        // Set error messages
-                        this.hasError = true;
-                        this.errorMessage = `Unable to fetch weather data for ${this.city}`;
-                    });
+                            // Set error messages
+                            this.isError = true;
+                            this.errorMsg = `Unable to fetch weather data for ${this.town}`;
+                        });
+                }
             }
-        }
         }).mount('#app')
     </script>
 </head>
 
 <body>
-    <div id="app">
-        <h1>Vuether: Vue Weather App</h1>
+    <div id="app" class="p-8">
+        <h1 class="text-4xl font-semibold">🌦
+            Weather App</h1>
         <br />
-        <p>Please enter the city you are seeking the forecast of:</p>
-        <input v-model="city" placeholder="City Name" />
-        <button v-on:click="getWeatherForCity"
-            class="h-10 px-6 font-semibold rounded-full bg-violet-600 text-white">Show me the weather!</button>
-        <span v-if="hasError">
+        <p>Please enter the town name for the weather forecast:</p>
+        <div class="flex items-center">
+            <div class="relative w-full">
+                <div class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
+                    <svg aria-hidden="true" class="w-5 h-5 text-gray-500 " fill="currentColor" viewBox="0 0 20 20"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd"
+                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                            clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <input v-model="town" type="text" v-model="town"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5 "
+                    placeholder="Enter a town name..." required />
+            </div>
+            <button v-on:click="getWeatherForecast"
+                class="inline-flex items-center py-2.5 px-3 ml-2 text-sm font-medium text-white bg-blue-700 rounded-lg border border-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                <svg aria-hidden="true" class="mr-2 -ml-1 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>Search
+            </button>
+        </div>
+
+
+        <!-- <button v-on:click="getWeatherForecast"
+            class="h-10 px-6 font-semibold rounded-full bg-violet-600 text-white">Show me the weather!</button> -->
+        <span v-if="isError">
             <br />
             <br />
-            <font color="red">{{errorMessage}}</font>
+            <font color="red">{{errorMsg}}</font>
         </span>
 
         <!-- Rain Packing Tips -->
-        <div v-if="!hasError && willRain != null">
+        <div v-if="!isError && doesRain != null">
             <p>
-                <b>Rain:</b>
-                <span v-if="willRain">There is rain forecast during these dates. You should pack an umberella.</span>
-                <span v-if="!willRain">There is no rain forecast during these dates. No need to pack an umberella!.</span>
+            <h2 class="text-lg font-semibold">☔ Rain:</h2>
+            <span v-if="doesRain">Pack an Umbrella, it might rain.</span>
+            <span v-if="!doesRain">No need to pack an Umbrella, it doesn't look like it's gonna rain.</span>
             </p>
         </div>
 
-        <!-- Weather Sentiment Packing Tips -->
-        <div v-if="!hasError && temperatureSummary != null">
+        <!-- Weather Type Packing Tips -->
+        <div v-if="!isError && temperatureAnalysis != null">
             <p>
-                <b>Packing:</b>
-                <span v-if="temperatureSummary.sentiment == 'hot'">Temperature range is >20°C. You should pack light
-                    clothes
-                    as to keep cool.</span>
-                <span v-if="temperatureSummary.sentiment == 'warm'">Temperature range is between
-                    {{temperatureSummary.max}}°C and {{temperatureSummary.min}}°C. You should pack both light clothes
-                    with
-                    some extra layers for when it gets colder.</span>
-                <span v-if="temperatureSummary.sentiment == 'cold'">Temperature range is between
-                    {{temperatureSummary.max}}°C and {{temperatureSummary.min}}°C. You should pack warm clothes with
-                    plenty
-                    of insulation to keep warm.</span>
+            <h2 class="text-lg font-semibold">👔 Packing:</h2>
+            <span v-if="temperatureAnalysis.weatherType == 'hot'">It's gonna be hot (more than 20°C). Pack light
+                clothes to keep cool.</span>
+            <span v-if="temperatureAnalysis.weatherType == 'warm'">It's gonna be warm({{temperatureAnalysis.max}}°C -
+                {{temperatureAnalysis.min}}°C). Pack some extra layers incase it gets colder.</span>
+            <span v-if="temperatureAnalysis.weatherType == 'cold'">It's gonna be cold
+                ({{temperatureAnalysis.max}}°C - {{temperatureAnalysis.min}}°C). Pack some winter clothes to keep
+                warm.</span>
             </p>
         </div>
 
-        <table v-if="forecastJson">
-            <thead>
+        <!-- Mask Advise -->
+        <div v-if="!isError && maskAdvised != null">
+            <p>
+            <h2 class="text-lg font-semibold">😷 Mask Advise: </h2>
+            <span v-if="maskAdvised">High Air Pollution Expected (PM2_5 > 10). You should wear a Mask
+                outside.</span>
+            <span v-if="!maskAdvised">There is not much air pollution these dates. No need to wear a mask!</span>
+            </p>
+        </div>
+
+        <table v-if="!isError && weatherJSON" class="w-full text-sm text-left text-gray-500 ">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-5">
                 <tr>
-                    <th scope="col">Date</th>
-                    <th scope="col">Avg Temperature (°C)</th>
-                    <th scope="col">Avg Wind Speed (m/s)</th>
-                    <th scope="col">Avg PM2_5</th>
-                    <th scope="col">Rainfall Level (mm)</th>
-                    <th scope="col">Min Temperature (°C)</th>
-                    <th scope="col">Max Temperature (°C)</th>
+                    <th scope="col" class="border border-slate-300">Date</th>
+                    <th scope="col" class="border border-slate-300">Avg. Temperature (°C)</th>
+                    <th scope="col" class="border border-slate-300">Highest (°C)</th>
+                    <th scope="col" class="border border-slate-300">Lowest (°C)</th>
+                    <th scope="col" class="border border-slate-300">Wind Speed (m/s)</th>
+                    <th scope="col" class="border border-slate-300">Air Pollution PM2_5</th>
+                    <th scope="col" class="border border-slate-300">Rainfall Level (mm)</th>
                 </tr>
             </thead>
             <tbody>
-                <template v-for="(dateEntry, date) in forecastJson">
+                <template v-for="(forecast, date) in weatherJSON">
                     <tr>
-                        <th scope="row">{{ date }}</th>
-                        <td>{{ dateEntry.averageTemp }}</td>
-                        <td>{{ dateEntry.averageWind }}</td>
-                        <td>{{ dateEntry.averagePM2_5 }}</td>
-                        <td>{{ dateEntry.rainfallLevels }}</td>
-                        <td>{{ dateEntry.temperatureRange.min }}</td>
-                        <td>{{ dateEntry.temperatureRange.max }}</td>
+                        <td scope="row" class="border">{{ date }}</td>
+                        <td class="border">{{ forecast.avgTemp }}</td>
+                        <td class="border">{{ forecast.temperatureRange.min }}</td>
+                        <td class="border">{{ forecast.temperatureRange.max }}</td>
+                        <td class="border">{{ forecast.avgWind }}</td>
+                        <td class="border">{{ forecast.avgPM2_5 }}</td>
+                        <td class="border">{{ forecast.rainfallLevels }}</td>
                     </tr>
                 </template>
             </tbody>

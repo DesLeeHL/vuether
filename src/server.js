@@ -2,177 +2,194 @@ import dotenv from "dotenv"
 import axios from "axios"
 import express from "express"
 import path from "path"
-import {get} from "http"
+const { get } = require("http");
 
 dotenv.config()
 
-const app = express()
+// Setting up Express App
+const app = express();
+app.use(cors());
 const port = 3000
-const API_key = process.env.OPENWEATHER_API_KEY
-const URL_base = 'https://api.openweathermap.org/data/2.5'
 
-const average = arr => arr.reduce((p, c) => p + c, 0) / arr.length
-const sum = arr => arr.reduce((p, c) => p + c, 0)
-const kel_to_cel = k => Math.round((k - 273.12) * 100) / 100
+// API Key from .env file and the base url
+const base_url = `https://api.openweathermap.org/data/2.5`
+const API_key = process.env.API_key
+
+// Some helper functions
+const average = arr => (arr.reduce((p, c) => p + c, 0) / arr.length).toFixed(2);
+const sum = arr => (arr.reduce((p, c) => p + c, 0)).toFixed(2);
+const kelvin_to_celsius = k => (k < 0) ? '0K' : Math.round((k - 273.12) * 100) / 100;
 const min_max = (arr) => {
-    const min = kel_to_cel(Math.min(...arr))
-    const max = kel_to_cel(Math.max(...arr))
+    const min = kelvin_to_celsius(Math.min(...arr));
+    const max = kelvin_to_celsius(Math.max(...arr));
     return { min: min, max: max }
 }
 
-const city = 'Dublin'
 
-app.get('/', (req, res) => res.send('Vuether Server'))
-app.get('/forecast/:city', getForecast)
+app.get('/', (req, res) => res.send('Weather App Server Side'));
 
-app.listen(port, () => console.log(`Example app listening on port ${port}!`))
+app.get('/weather/:town', getForecast);
 
+app.listen(port, () => console.log(`Weather app listening on port ${port}!`));
+
+// Air Pollution PM2_5 Analysis
 function getMaskAdvise(forecastData) {
-    let pm25 = []
-    for (dateEntry in forecastData) {
-        pm25.push(forecastData[dateEntry].averagePM2_5)
+    var pm2_5 = [];
+    for (forecastDate in forecastData) {
+        if (forecastData[forecastDate].avgPM2_5 === null || forecastData[forecastDate].avgPM2_5 === undefined)
+            pm2_5.push(parseInt(0));
+        else
+            pm2_5.push(parseInt(forecastData[forecastDate].avgPM2_5));
     }
     // console.log(pm2_5)
-    const pm25_avg = average(pm25)
-    return pm25_avg > 10
+    const pm2_5_avg = average(pm2_5);
+    return (pm2_5_avg > 10);
 }
 
-function getTemperaturesSummary(forecastData) {
-    let max = 0
-    let min = forecastData[Object.keys(forecastData)[0]].averageTemp
-    let sentiment = null
+// Temperature Analysis - hot/warm/cold
+function getTemperatureAnalysis(forecastData) {
+    let max = 0;
+    let min = forecastData[Object.keys(forecastData)[0]].avgTemp;
+    let weatherType = null;
 
-    let minMaxObj = {}
+    let tempRange = {};
 
-    // Loop over every day getting the absolute min and max values
-    for (dateEntry in forecastData) {
-        minMaxObj = forecastData[dateEntry].temperatureRange
-        // Check if the max on this day is more than current max
-        if (minMaxObj.max >= max)
-            max = minMaxObj.max
-        // Check if the min on this day is more than current max
-        if (minMaxObj.min <= min)
-            min = minMaxObj.min
+    for (forecastDate in forecastData) {
+        tempRange = forecastData[forecastDate].temperatureRange;
+        if (tempRange.max >= max)
+            max = tempRange.max;
+        if (tempRange.min <= min)
+            min = tempRange.min;
     }
 
-    if (max >= 20.0)
-        sentiment = "hot"
-    else if (max <= 20.0 && min >= 10.0)
-        sentiment = "warm"
-    else
-        sentiment = "cold"
+    if (max > 24) weatherType = "hot";
+    else if (min >= 12 && max <= 24) weatherType = "mild";
+    else weatherType = "cold";
 
     return {
-        sentiment: sentiment,
+        weatherType: weatherType,
         max: max,
         min: min
     }
+
 }
 
-// axios.get(`${URL_base}/forecast?q=${city}&APPID=${API_key}`).then((response) => {
-//     console.log(`Forecast in ${city}`)
-//     console.log(response.data)
-// })
-
 function getForecast(req, res) {
-    let city = req.params.city
-    console.log(`Getting weather forecast for ${city} ...`)
+    var town = req.params.town;
+    console.log(`Requesting weather forecast for ${town}...`);
 
-    let forcastData = {}
-    let willRain = false
-    let forecastSentiment = null
-    let airPolData = {}
-    var latitude, longitude = 0
+    var forecastData = {};
+    var doesRain = false;
+    var airPollutionData = {};
+    var latitude = 0;
+    var longitude = 0;
 
-    axios.get(`${URL_base}/forecast?q=${city}&APPID=${API_key}`).then(
+
+    axios.get(`${base_url}/forecast?q=${town}&APPID=${API_key}`).then(
         (response) => {
-            const { latitude, longitude } = response.data.city.coord
-            latitude = latitude
-            longitude = longitude
-            // const airPollution = getAirPollutionForecast(latitude, longitude)
+            const { lat, lon } = response.data.city.coord;
+            latitude = lat;
+            longitude = lon;
 
-            var weatherData = response.data.list
+            var weatherData = response.data.list;
+            // Iterating over each day forecast
 
-            //  Loop over OpenWeather API response and extract data for each day
+            var days = 0
             for (weatherEntry in weatherData) {
-                // Make the date look nicer for front-end
-                let date = new Date(response.data.list[weatherEntry].dt * 1000)
-                date.setHours(0, 0, 0, 0)
-                date = date.toLocaleDateString()
-
-                // First check if there is a date entry for the given date, if not create one
-                if (!forecastSummary[date]) {
-                    forecastSummary[date] = {
-                        temperatures: [],
+                // formatting date
+                let date = new Date(response.data.list[weatherEntry].dt * 1000);
+                date.setHours(0, 0, 0, 0);
+                date = date.toLocaleDateString();
+                // Making sure we only have next four days forercast
+                if (days > 4) break;
+                // Initiliazing if undefined or null
+                if (!forecastData[date]) {
+                    days++;
+                    forecastData[date] = {
                         windSpeeds: [],
+                        temperatures: [],
                         rainfallLevels: [],
                     }
                 }
 
-                // Extract temperature and wind speed data
-                forecastSummary[date].temperatures.push(weatherData[weatherEntry].main.temp)
-                forecastSummary[date].windSpeeds.push(weatherData[weatherEntry].wind.speed)
+                forecastData[date].windSpeeds.push(weatherData[weatherEntry].wind.speed);
+                forecastData[date].temperatures.push(weatherData[weatherEntry].main.temp);
 
                 // Check if there is any rain
                 if (weatherData[weatherEntry].rain && weatherData[weatherEntry].rain['3h']) {
-                    isRain = true
-                    forecastSummary[date].rainfallLevels.push(weatherData[weatherEntry].rain['3h'])
+                    doesRain = true;
+                    forecastData[date].rainfallLevels.push(weatherData[weatherEntry].rain['3h']);
                 }
 
             }
+
         }
+    ).then(() => {
+        axios.get(`${base_url}/air_pollution/forecast?lat=${latitude}&lon=${longitude}&APPID=${API_key}`).then((response1) => {
+            const airPollutionData = response1.data.list;
+            var days = 0
+            for (airPollutionEntry of airPollutionData) {
+                let date = new Date(airPollutionEntry.dt * 1000);
+                date.setHours(0, 0, 0, 0);
+                date = date.toLocaleDateString();
+                // Making sure we only have next four days forercast
+                if (days > 4) break;
+                // Initiliazing if undefined or null
+                if (!airPollutionData[date]) {
+                    days++;
+                    airPollutionData[date] = {
+                        pm2_5: []
+                    }
+                }
+                // console.log(airPollutionEntry.components.pm2_5)
+                airPollutionData[date].pm2_5.push(parseInt(airPollutionEntry.components.pm2_5))
+                // console.log(`${date} - PM2_5 - ${airPollutionEntry.components.pm2_5}`)
+            }
+
+
+            //  Calculating averages once compiled
+
+            for (forecastDate in forecastData) {
+
+                // console.log(airPollutionData[forecastDate].pm2_5)
+                forecastData[forecastDate].avgTemp = kelvin_to_celsius(average(forecastData[forecastDate].temperatures));
+                forecastData[forecastDate].temperatureRange = min_max(forecastData[forecastDate].temperatures);
+                forecastData[forecastDate].avgWind = average(forecastData[forecastDate].windSpeeds);
+                forecastData[forecastDate].rainfallLevels = sum(forecastData[forecastDate].rainfallLevels);
+                if (airPollutionData[forecastDate] !== null && airPollutionData[forecastDate] !== undefined)
+                    forecastData[forecastDate].avgPM2_5 = average(airPollutionData[forecastDate].pm2_5);
+            }
+
+            // Get overall temperature weatherType and air pollution analysis
+            temperatureAnalysis = getTemperatureAnalysis(forecastData);
+            maskAdvised = getMaskAdvise(forecastData);
+
+
+
+            res.json({
+                forecastData: forecastData,
+                doesRain: doesRain,
+                temperatureAnalysis: temperatureAnalysis,
+                maskAdvised: maskAdvised
+            })
+
+
+        }).catch((error) => {
+            console.error(error);
+            res.status(400);
+            res.json({
+                error: "Bad Request!"
+            });
+        })
+    }
+
     ).catch((error) => {
-        console.log(error)
-        res.status(400)
+        console.error(error);
+        res.status(400);
         res.json({
             error: "Bad Request!"
-        })
+        });
     })
 
-    axios.get(`${URL_base}/air_pollution/forecast?latitude=${latitude}&longitude=${longitude}&APPID=${API_key}`).then((response1) => {
-        const airPollutionData = response1.data.list
-        for (airPollutionEntry of airPollutionData) {
-            let date = new Date(airPollutionEntry.dt * 1000)
-            date.setHours(0, 0, 0, 0)
-            date = date.toLocaleDateString()
-
-            // First check if there is a date entry for the given date, if not create one
-            if (!airPollutionSummary[date]) {
-                airPollutionSummary[date] = {
-                    pm2_5: []
-                }
-            }
-            // Extract temperature and wind speed data
-            airPollutionSummary[date].pm2_5.push(airPollutionEntry.components.pm2_5)
-            // console.log(`${date} - PM2_5 - ${airPollutionEntry.components.pm2_5}`)
-        }
-
-        // When finished extracting data, calculate averages
-        for (dateEntry in forecastSummary) {
-            forecastSummary[dateEntry].averageTemp = kelvin_to_celsius(average(forecastSummary[dateEntry].temperatures))
-            forecastSummary[dateEntry].averageWind = average(forecastSummary[dateEntry].windSpeeds)
-            forecastSummary[dateEntry].rainfallLevels = sum(forecastSummary[dateEntry].rainfallLevels)
-            forecastSummary[dateEntry].temperatureRange = min_max(forecastSummary[dateEntry].temperatures)
-            forecastSummary[dateEntry].averagePM2_5 = average(airPollutionSummary[dateEntry].pm2_5)
-        }
-
-        // Get overall temperature sentiment
-        temperatureSummary = getTemperaturesSummary(forecastSummary)
-        maskAdvised = getMaskAdvise(forecastSummary)
-
-
-        res.json({
-            forecastSummary: forecastSummary,
-            isRain: isRain,
-            temperatureSummary: temperatureSummary,
-            maskAdvised: maskAdvised
-        })
-
-    }).catch((error) => {
-        console.error(error)
-        res.status(400)
-        res.json({
-            error: "Bad Request!"
-        })
-    })
 }
+
