@@ -25,29 +25,32 @@ TODO:
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vuether</title>
     <!-- Include Vue -->
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-
+    <script type="importmap">
+        {
+            "imports": {
+                "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js"
+            }
+        }
+    </script>
     <script type="module">
         import { createApp } from 'vue'
         createApp({
             data() {
                 return {
-                    message: '',
-                    count: 0,
-                    town: '',
+                    city: '',
                     isError: false,
                     errorMsg: '',
                     weatherJSON: null,
-                    doesRain: null,
-                    maskAdvised: null,
-                    temperatureAnalysis: null,
+                    willRain: null,
+                    maskAdvice: null,
+                    tempSentiment: null,
                 }
             },
             methods: {
                 getWeatherForecast() {
-                    console.log(`Requesting weather forecast for ${this.town}...`);
+                    console.log(`Requesting weather forecast for ${this.city} from OpenWeather...`);
 
-                    fetch(`http://localhost:3000/weather/${this.town}`)
+                    fetch(`http://localhost:3000/forecast/${this.city}`)
                         .then((response) => {
                             // if the response is ok
                             if (response.status === 200) return response.json();
@@ -55,9 +58,9 @@ TODO:
                         }).then(responseJSON => {
                             console.log(responseJSON);
                             this.weatherJSON = responseJSON.forecastData;
-                            this.temperatureAnalysis = responseJSON.temperatureAnalysis;
-                            this.doesRain = responseJSON.doesRain;
-                            this.maskAdvised = responseJSON.maskAdvised;
+                            this.tempSentiment = responseJSON.tempSentiment;
+                            this.willRain = responseJSON.willRain;
+                            this.maskAdvice = responseJSON.maskAdvice;
 
                             // Reset any errors
                             this.isError = false;
@@ -68,7 +71,7 @@ TODO:
 
                             // Set error messages
                             this.isError = true;
-                            this.errorMsg = `Unable to fetch weather data for ${this.town}`;
+                            this.errorMsg = `Unable to fetch weather data for ${this.city}`;
                         });
                 }
             }
@@ -77,28 +80,17 @@ TODO:
 </head>
 
 <body>
-    <div id="app" class="p-8">
-        <h1 class="text-4xl font-semibold">🌦
-            Weather App</h1>
+    <div id="app">
+        <h1>Vuether</h1>
         <br />
-        <p>Please enter the town name for the weather forecast:</p>
-        <div class="flex items-center">
-            <div class="relative w-full">
-                <div class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
-                    <svg aria-hidden="true" class="w-5 h-5 text-gray-500 " fill="currentColor" viewBox="0 0 20 20"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd"
-                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                            clip-rule="evenodd"></path>
-                    </svg>
-                </div>
-                <input v-model="town" type="text" v-model="town"
-                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5 "
-                    placeholder="Enter a town name..." required />
+        <p>Please enter the city name for the weather forecast:</p>
+        <div>
+            <div>
+                <input v-model="city" type="text" v-model="city"
+                    placeholder="Enter a city name..." required />
             </div>
-            <button v-on:click="getWeatherForecast"
-                class="inline-flex items-center py-2.5 px-3 ml-2 text-sm font-medium text-white bg-blue-700 rounded-lg border border-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                <svg aria-hidden="true" class="mr-2 -ml-1 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            <button v-on:click="getWeatherForecast">
+                <svg aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                     xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -116,40 +108,40 @@ TODO:
         </span>
 
         <!-- Rain Packing Tips -->
-        <div v-if="!isError && doesRain != null">
+        <div v-if="!isError && willRain != null">
             <p>
-            <h2 class="text-lg font-semibold">☔ Rain:</h2>
-            <span v-if="doesRain">Pack an Umbrella, it might rain.</span>
-            <span v-if="!doesRain">No need to pack an Umbrella, it doesn't look like it's gonna rain.</span>
+            <h2>☔ Rain:</h2>
+            <span v-if="willRain">Pack an Umbrella, it might rain.</span>
+            <span v-if="!willRain">No need to pack an Umbrella, it doesn't look like it's gonna rain.</span>
             </p>
         </div>
 
         <!-- Weather Type Packing Tips -->
-        <div v-if="!isError && temperatureAnalysis != null">
+        <div v-if="!isError && tempSentiment != null">
             <p>
-            <h2 class="text-lg font-semibold">👔 Packing:</h2>
-            <span v-if="temperatureAnalysis.weatherType == 'hot'">It's gonna be hot (more than 20°C). Pack light
+            <h2>👔 Packing:</h2>
+            <span v-if="tempSentiment.weatherType == 'hot'">It's gonna be hot (more than 20°C). Pack light
                 clothes to keep cool.</span>
-            <span v-if="temperatureAnalysis.weatherType == 'warm'">It's gonna be warm({{temperatureAnalysis.max}}°C -
-                {{temperatureAnalysis.min}}°C). Pack some extra layers incase it gets colder.</span>
-            <span v-if="temperatureAnalysis.weatherType == 'cold'">It's gonna be cold
-                ({{temperatureAnalysis.max}}°C - {{temperatureAnalysis.min}}°C). Pack some winter clothes to keep
+            <span v-if="tempSentiment.weatherType == 'warm'">It's gonna be warm({{tempSentiment.max}}°C -
+                {{tempSentiment.min}}°C). Pack some extra layers incase it gets colder.</span>
+            <span v-if="tempSentiment.weatherType == 'cold'">It's gonna be cold
+                ({{tempSentiment.max}}°C - {{tempSentiment.min}}°C). Pack some winter clothes to keep
                 warm.</span>
             </p>
         </div>
 
-        <!-- Mask Advise -->
-        <div v-if="!isError && maskAdvised != null">
+        <!-- Mask Advice -->
+        <div v-if="!isError && maskAdvice != null">
             <p>
-            <h2 class="text-lg font-semibold">😷 Mask Advise: </h2>
-            <span v-if="maskAdvised">High Air Pollution Expected (PM2_5 > 10). You should wear a Mask
+            <h2>😷 Mask Advice: </h2>
+            <span v-if="maskAdvice">High Air Pollution Expected (PM2_5 > 10). You should wear a Mask
                 outside.</span>
-            <span v-if="!maskAdvised">There is not much air pollution these dates. No need to wear a mask!</span>
+            <span v-if="!maskAdvice">There is not much air pollution these dates. No need to wear a mask!</span>
             </p>
         </div>
 
-        <table v-if="!isError && weatherJSON" class="w-full text-sm text-left text-gray-500 ">
-            <thead class="text-xs text-gray-700 uppercase bg-gray-5">
+        <table v-if="!isError && weatherJSON">
+            <thead>
                 <tr>
                     <th scope="col" class="border border-slate-300">Date</th>
                     <th scope="col" class="border border-slate-300">Avg. Temperature (°C)</th>

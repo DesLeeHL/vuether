@@ -1,12 +1,6 @@
 {
   "name": "vuether",
   "version": "1.0.0",
-  "description": "`npm install`",
-  "main": "index.js",
-  "type": "module",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/DesLeeHL/vuether.git"
@@ -21,9 +15,6 @@
     "axios": "^1.1.3",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
-    "express": "^4.18.2",
-    "http": "0.0.1-security",
-    "path": "^0.12.7",
-    "require": "^2.4.20"
+    "express": "^4.18.2"
   }
 }

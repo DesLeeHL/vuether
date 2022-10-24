@@ -1,10 +1,10 @@
-import dotenv from "dotenv"
-import axios from "axios"
-import express from "express"
-import path from "path"
-const { get } = require("http");
+// console.log('Vue App Backend')
+require("dotenv").config()
 
-dotenv.config()
+const axios = require('axios')
+const cors = require('cors');
+const express = require('express');
+const { get } = require("http");
 
 // Setting up Express App
 const app = express();
@@ -12,8 +12,8 @@ app.use(cors());
 const port = 3000
 
 // API Key from .env file and the base url
-const base_url = `https://api.openweathermap.org/data/2.5`
-const API_key = process.env.API_key
+const URL_base = `https://api.openweathermap.org/data/2.5`
+const API_key = process.env.OPENWEATHER_API_KEY
 
 // Some helper functions
 const average = arr => (arr.reduce((p, c) => p + c, 0) / arr.length).toFixed(2);
@@ -28,18 +28,18 @@ const min_max = (arr) => {
 
 app.get('/', (req, res) => res.send('Weather App Server Side'));
 
-app.get('/weather/:town', getForecast);
+app.get('/forecast/:city', getForecast);
 
 app.listen(port, () => console.log(`Weather app listening on port ${port}!`));
 
 // Air Pollution PM2_5 Analysis
-function getMaskAdvise(forecastData) {
+function getMaskAdvice(forecastData) {
     var pm2_5 = [];
-    for (forecastDate in forecastData) {
-        if (forecastData[forecastDate].avgPM2_5 === null || forecastData[forecastDate].avgPM2_5 === undefined)
+    for (date in forecastData) {
+        if (forecastData[date].avgPM2_5 === null || forecastData[date].avgPM2_5 === undefined)
             pm2_5.push(parseInt(0));
         else
-            pm2_5.push(parseInt(forecastData[forecastDate].avgPM2_5));
+            pm2_5.push(parseInt(forecastData[date].avgPM2_5));
     }
     // console.log(pm2_5)
     const pm2_5_avg = average(pm2_5);
@@ -47,15 +47,15 @@ function getMaskAdvise(forecastData) {
 }
 
 // Temperature Analysis - hot/warm/cold
-function getTemperatureAnalysis(forecastData) {
+function getTempSentiment(forecastData) {
     let max = 0;
     let min = forecastData[Object.keys(forecastData)[0]].avgTemp;
     let weatherType = null;
 
     let tempRange = {};
 
-    for (forecastDate in forecastData) {
-        tempRange = forecastData[forecastDate].temperatureRange;
+    for (date in forecastData) {
+        tempRange = forecastData[date].temperatureRange;
         if (tempRange.max >= max)
             max = tempRange.max;
         if (tempRange.min <= min)
@@ -75,21 +75,21 @@ function getTemperatureAnalysis(forecastData) {
 }
 
 function getForecast(req, res) {
-    var town = req.params.town;
-    console.log(`Requesting weather forecast for ${town}...`);
+    var city = req.params.city;
+    console.log(`Requesting weather forecast for ${city}...`);
 
     var forecastData = {};
-    var doesRain = false;
+    var willRain = false;
     var airPollutionData = {};
-    var latitude = 0;
-    var longitude = 0;
+    var townLat = 0;
+    var townLon = 0;
 
 
-    axios.get(`${base_url}/forecast?q=${town}&APPID=${API_key}`).then(
+    axios.get(`${URL_base}/forecast?q=${city}&APPID=${API_key}`).then(
         (response) => {
             const { lat, lon } = response.data.city.coord;
-            latitude = lat;
-            longitude = lon;
+            townLat = lat;
+            townLon = lon;
 
             var weatherData = response.data.list;
             // Iterating over each day forecast
@@ -117,7 +117,7 @@ function getForecast(req, res) {
 
                 // Check if there is any rain
                 if (weatherData[weatherEntry].rain && weatherData[weatherEntry].rain['3h']) {
-                    doesRain = true;
+                    willRain = true;
                     forecastData[date].rainfallLevels.push(weatherData[weatherEntry].rain['3h']);
                 }
 
@@ -125,7 +125,7 @@ function getForecast(req, res) {
 
         }
     ).then(() => {
-        axios.get(`${base_url}/air_pollution/forecast?lat=${latitude}&lon=${longitude}&APPID=${API_key}`).then((response1) => {
+        axios.get(`${URL_base}/air_pollution/forecast?lat=${townLat}&lon=${townLon}&APPID=${API_key}`).then((response1) => {
             const airPollutionData = response1.data.list;
             var days = 0
             for (airPollutionEntry of airPollutionData) {
@@ -149,28 +149,28 @@ function getForecast(req, res) {
 
             //  Calculating averages once compiled
 
-            for (forecastDate in forecastData) {
+            for (date in forecastData) {
 
-                // console.log(airPollutionData[forecastDate].pm2_5)
-                forecastData[forecastDate].avgTemp = kelvin_to_celsius(average(forecastData[forecastDate].temperatures));
-                forecastData[forecastDate].temperatureRange = min_max(forecastData[forecastDate].temperatures);
-                forecastData[forecastDate].avgWind = average(forecastData[forecastDate].windSpeeds);
-                forecastData[forecastDate].rainfallLevels = sum(forecastData[forecastDate].rainfallLevels);
-                if (airPollutionData[forecastDate] !== null && airPollutionData[forecastDate] !== undefined)
-                    forecastData[forecastDate].avgPM2_5 = average(airPollutionData[forecastDate].pm2_5);
+                // console.log(airPollutionData[date].pm2_5)
+                forecastData[date].avgTemp = kelvin_to_celsius(average(forecastData[date].temperatures));
+                forecastData[date].temperatureRange = min_max(forecastData[date].temperatures);
+                forecastData[date].avgWind = average(forecastData[date].windSpeeds);
+                forecastData[date].rainfallLevels = sum(forecastData[date].rainfallLevels);
+                if (airPollutionData[date] !== null && airPollutionData[date] !== undefined)
+                    forecastData[date].avgPM2_5 = average(airPollutionData[date].pm2_5);
             }
 
             // Get overall temperature weatherType and air pollution analysis
-            temperatureAnalysis = getTemperatureAnalysis(forecastData);
-            maskAdvised = getMaskAdvise(forecastData);
+            tempSentiment = getTempSentiment(forecastData);
+            maskAdvice = getMaskAdvice(forecastData);
 
 
 
             res.json({
                 forecastData: forecastData,
-                doesRain: doesRain,
-                temperatureAnalysis: temperatureAnalysis,
-                maskAdvised: maskAdvised
+                willRain: willRain,
+                tempSentiment: tempSentiment,
+                maskAdvice: maskAdvice
             })
 
 
@@ -192,4 +192,3 @@ function getForecast(req, res) {
     })
 
 }
-
