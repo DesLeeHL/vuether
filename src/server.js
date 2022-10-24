@@ -2,6 +2,7 @@ import dotenv from "dotenv"
 import axios from "axios"
 import express from "express"
 import path from "path"
+import {get} from "http"
 
 dotenv.config()
 
@@ -22,18 +23,18 @@ const min_max = (arr) => {
 const city = 'Dublin'
 
 app.get('/', (req, res) => res.send('Vuether Server'))
-app.get('/forecast/:town', getForecast)
+app.get('/forecast/:city', getForecast)
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))
 
 function getMaskAdvise(forecastData) {
-    let pm2_5 = []
+    let pm25 = []
     for (dateEntry in forecastData) {
-        pm2_5.push(forecastData[dateEntry].averagePM2_5)
+        pm25.push(forecastData[dateEntry].averagePM2_5)
     }
     // console.log(pm2_5)
-    const pm2_5_avg = average(pm2_5)
-    return pm2_5_avg > 10
+    const pm25_avg = average(pm25)
+    return pm25_avg > 10
 }
 
 function getTemperaturesSummary(forecastData) {
@@ -46,43 +47,34 @@ function getTemperaturesSummary(forecastData) {
     // Loop over every day getting the absolute min and max values
     for (dateEntry in forecastData) {
         minMaxObj = forecastData[dateEntry].temperatureRange
-
         // Check if the max on this day is more than current max
         if (minMaxObj.max >= max)
             max = minMaxObj.max
-
         // Check if the min on this day is more than current max
         if (minMaxObj.min <= min)
             min = minMaxObj.min
-
     }
-
-
 
     if (max >= 20.0)
         sentiment = "hot"
-
     else if (max <= 20.0 && min >= 10.0)
         sentiment = "warm"
-
     else
         sentiment = "cold"
-
 
     return {
         sentiment: sentiment,
         max: max,
         min: min
     }
-
 }
 
-axios.get(`${URL_base}/forecast?q=${city}&APPID=${API_key}`).then((response) => {
-    console.log(`Forecast in ${city}`)
-    console.log(response.data)
-})
+// axios.get(`${URL_base}/forecast?q=${city}&APPID=${API_key}`).then((response) => {
+//     console.log(`Forecast in ${city}`)
+//     console.log(response.data)
+// })
 
-function getForcast(req, res) {
+function getForecast(req, res) {
     let city = req.params.city
     console.log(`Getting weather forecast for ${city} ...`)
 
@@ -90,14 +82,14 @@ function getForcast(req, res) {
     let willRain = false
     let forecastSentiment = null
     let airPolData = {}
-    var lat, long = 0
+    var latitude, longitude = 0
 
     axios.get(`${URL_base}/forecast?q=${city}&APPID=${API_key}`).then(
         (response) => {
-            const { lat, lon } = response.data.city.coord
-            lati = lat
-            longi = lon
-            // const airPollution = getAirPollutionForecast(lat, lon)
+            const { latitude, longitude } = response.data.city.coord
+            latitude = latitude
+            longitude = longitude
+            // const airPollution = getAirPollutionForecast(latitude, longitude)
 
             var weatherData = response.data.list
 
@@ -137,7 +129,7 @@ function getForcast(req, res) {
         })
     })
 
-    axios.get(`${base_url}/air_pollution/forecast?lat=${lati}&lon=${longi}&APPID=${API_key}`).then((response1) => {
+    axios.get(`${URL_base}/air_pollution/forecast?latitude=${latitude}&longitude=${longitude}&APPID=${API_key}`).then((response1) => {
         const airPollutionData = response1.data.list
         for (airPollutionEntry of airPollutionData) {
             let date = new Date(airPollutionEntry.dt * 1000)
@@ -169,14 +161,12 @@ function getForcast(req, res) {
         maskAdvised = getMaskAdvise(forecastSummary)
 
 
-
         res.json({
             forecastSummary: forecastSummary,
             isRain: isRain,
             temperatureSummary: temperatureSummary,
             maskAdvised: maskAdvised
         })
-
 
     }).catch((error) => {
         console.error(error)
