@@ -131,9 +131,9 @@ function getForecast(req, res) {
                 // Air pollution next 5 days
                 if (days > 5) break;
                 // Initiliazing if undefined or null
-                if (!fetchedAirPollutionData[date]) {
+                if (!airPollutionData[date]) {
                     days++;
-                    fetchedAirPollutionData[date] = {
+                    airPollutionData[date] = {
                         pm2_5: []
                     }
                 }
