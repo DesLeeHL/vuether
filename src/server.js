@@ -33,7 +33,7 @@ function timezoneFromDT(dt){
 //get hour and minute from dt
 function timeFromDT(dt){
     let date=new Date(dt*1000);
-    let hrMin = date.getHours()+':'+date.getMinutes()+':'+date.getSeconds();
+    let hrMin = date.getHours()+':'+date.getMinutes();
     return hrMin;
 }
 app.get('/', (req, res) => res.send('Vuether Backend'));
