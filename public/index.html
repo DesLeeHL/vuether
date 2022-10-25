@@ -1,29 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-<!-- 
-TODO:
-- City Input
-- API Return
-    - Packing: 
-        - umbrealla if there is rain anytime over the next 4-days
-        - Cold - Temp < 12C
-        - Mild - 12C <= Temp <= 24C
-        - Hot - Temp > 24C
-    - Summary of next 4 days showing: 
-        - Temperature
-        - Wind Speed
-        - Rainfall level.
-    - Air Pollution - PM2_5 forecast for the next 5 days
-        - advise the user to wear a mask if PM2_5 > 10
-    - One Innovative Feature 
-
- -->
 
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vuether</title>
+    <title>☁️Vuether🌡️</title>
     <!-- Include Vue -->
     <script type="importmap">
         {
@@ -44,7 +26,7 @@ TODO:
                     willRain: null,
                     maskAdvised: null,
                     tempSentiment: null,
-                    airPolJSON:null
+                    airPolJSON: null
                 }
             },
             methods: {
@@ -53,7 +35,6 @@ TODO:
 
                     fetch(`http://localhost:3000/forecast/${this.city}`)
                         .then((response) => {
-                            // if the response is ok
                             if (response.status === 200) return response.json();
                             else throw Error(response.statusText);
                         }).then(responseJSON => {
@@ -62,15 +43,15 @@ TODO:
                             this.willRain = responseJSON.willRain;
                             this.tempSentiment = responseJSON.tempSentiment;
                             this.maskAdvised = responseJSON.maskAdvised;
-                            this.airPolJSON=responseJSON.airPollutionData;
-                            // Reset any errors
+                            this.airPolJSON = responseJSON.airPollutionData;
+                            // Clear errors
                             this.hasError = false;
                             this.errorMsg = '';
                         })
                         .catch(error => {
                             console.error(error);
 
-                            // Set error messages
+                            // Set error
                             this.hasError = true;
                             this.errorMsg = `Can't fetch weather data for ${this.city} :(`;
                         });
@@ -82,13 +63,12 @@ TODO:
 
 <body>
     <div id="app">
-        <h1>Vuether</h1>
+        <h1>☁️Vuether🌡️</h1>
         <br />
         <h2>Enter city name for today's weather and its forecast for the next four days:</h2>
         <div>
             <div>
-                <input v-model="city" type="text" v-model="city"
-                    placeholder="City..." required />
+                <input v-model="city" type="text" v-model="city" placeholder="City..." required />
             </div>
             <button v-on:click="getWeatherForecast">Search🔍</button>
         </div>
@@ -99,78 +79,91 @@ TODO:
 
         <!-- Umbrella Packing Tips -->
         <div v-if="!hasError && willRain != null">
-            
+
             <h2>🌂 Should I bring an umbrella?</h2>
-            <span v-if="willRain">☔ Bring an umbrella with ya, you don't wanna get soaked.</span>
-            <span v-if="!willRain">🌞 Keep your umbrella at home, and enjoy some sunny days, or maybe cloudy.</span>
-            
+            <span v-if="willRain">☔ Bring an umbrella with ya, you don't wanna get soaked. 💦</span>
+            <span v-if="!willRain">🌞 Keep your umbrella at home, and enjoy some sunny days, or maybe cloudy. ⛅</span>
+
         </div>
 
         <!-- Clothes Packing Tips by Temperature Sentiment-->
         <div v-if="!hasError && tempSentiment != null">
-            
-            <h2>👔 What kind of clothes should I pack?</h2>
-            <span v-if="tempSentiment.tempFeel == 'hot'">🥵Hot weather({{tempSentiment.min}}°C - {{tempSentiment.max}}°C).
-                <br/>👕 Pack some light cloths and stay hydrated!
+
+            <h2>👔 What kind of clothes should I pack? 🧳</h2>
+            <span v-if="tempSentiment.tempFeel == 'hot'">🥵Hot weather({{tempSentiment.min}}°C -
+                {{tempSentiment.max}}°C).
+                <br />👕 Pack some light cloths and stay hydrated! 💧
             </span>
-            <span v-if="tempSentiment.tempFeel == 'mild'">🤗Mild weather({{tempSentiment.min}}°C - {{tempSentiment.max}}°C).
-                <br/>👘 Pack a few extra layers just in case.</span>
-            <span v-if="tempSentiment.tempFeel == 'cold'">🥶Cold weather({{tempSentiment.min}}°C - {{tempSentiment.max}}°C).
-                <br/>🏂 Pack some warm clothes and maybe enjoy a hot cuppa.</span>
-            
+            <span v-if="tempSentiment.tempFeel == 'mild'">🤗Mild weather({{tempSentiment.min}}°C -
+                {{tempSentiment.max}}°C).
+                <br />👘 Pack a few extra layers just in case. 🍃</span>
+            <span v-if="tempSentiment.tempFeel == 'cold'">🥶Cold weather({{tempSentiment.min}}°C -
+                {{tempSentiment.max}}°C).
+                <br />🏂 Pack some warm clothes and maybe enjoy a hot cuppa. ☕</span>
+
         </div>
 
         <!-- Masking tips -->
         <div v-if="!hasError && maskAdvised != null">
-            
+
             <h2>🏭 Should I wear a mask?</h2>
             <span v-if="maskAdvised">😷 The air quality is going to be rough. You should wear a mask!</span>
             <span v-if="!maskAdvised">😃 The air quality is going be good. Enjoy the fresh air!</span>
-            
+
         </div>
 
-        <table v-if="!hasError && weatherJSON">
-            <thead>
-                <tr>
-                    <th>📆</th>
-                    <th>Lowest 🌡️(°C)</th>
-                    <th>Avg.🌡️ (°C)</th>
-                    <th>Highest 🌡️(°C)</th>
-                    <th>☴(m/s)</th>
-                    <th>☔(mm)</th>
-                </tr>
-            </thead>
-            <tbody>
-                <template v-for="(dayForecastData, date) in weatherJSON">
+
+        <div v-if="!hasError && weatherJSON">
+            <h2>☁️Next 4 Days Weather Forecast🌡️</h2>
+            <table>
+                <thead>
                     <tr>
-                        <td>|<u>{{ date }}</u></td>
-                        <td>|<u>{{ dayForecastData.minTemp }}</u></td>
-                        <td>|<u>{{ dayForecastData.avgTemp }}</u></td>
-                        <td>|<u>{{ dayForecastData.maxTemp }}</u></td>
-                        <td>|<u>{{ dayForecastData.avgWind }}</u></td>
-                        <td>|<u>{{ dayForecastData.rainfallLevels }}</u></td>
+                        <th>📆</th>
+                        <th>Lowest 🌡️(°C)</th>
+                        <th>Avg.🌡️ (°C)</th>
+                        <th>Highest 🌡️(°C)</th>
+                        <th>🌬️(m/s)</th>
+                        <th>☔(mm)</th>
                     </tr>
-                </template>
-            </tbody>
-        </table>
-        <table v-if="!hasError&&airPolJSON">
-            <thead>
-                <tr>
-                    <th>📆</th>
-                    <th>avgPM2_5</th>
-                    <!-- <th>pm2_5</th> -->
-                </tr>
-            </thead>
-            <tbody>
-                <template v-for="(dayAirPolData, date) in airPolJSON">
+                </thead>
+                <tbody>
+                    <template v-for="(dayForecastData, date) in weatherJSON">
+                        <tr>
+                            <td>|<u>{{ date }}</u></td>
+                            <td>|<u>{{ dayForecastData.minTemp }}</u></td>
+                            <td>|<u>{{ dayForecastData.avgTemp }}</u></td>
+                            <td>|<u>{{ dayForecastData.maxTemp }}</u></td>
+                            <td>|<u>{{ dayForecastData.avgWind }}</u></td>
+                            <td>|<u>{{ dayForecastData.rainfallLevels }}</u></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+        <div v-if="!hasError&&airPolJSON">
+            <h2>🫁 Next 5 Days Air Pollution 🏭
+                <br/>Remember to bring a mask if any day's PM2_5 is over 10!
+            </h2>
+            <table>
+                <thead>
                     <tr>
-                        <td>|<u>{{ date }}</u></td>
-                        <td>|<u>{{ dayAirPolData.avgPM2_5 }}</u></td>
-                        <!-- <td>|<u>{{ airPolData.pm2_5 }}</u></td> -->
+                        <th>📆</th>
+                        <th>Daily Average PM2_5</th>
+                        <!-- <th>pm2_5</th> -->
                     </tr>
-                </template>
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    <template v-for="(dayAirPolData, date) in airPolJSON">
+                        <tr>
+                            <td>|<u>{{ date }}</u></td>
+                            <td>|<u>{{ dayAirPolData.avgPM2_5 }}</u></td>
+                            <!-- <td>|<u>{{ airPolData.pm2_5 }}</u></td> -->
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
     </div>
 </body>
 
