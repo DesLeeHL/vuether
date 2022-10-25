@@ -3,7 +3,6 @@ const axios = require('axios')
 const cors = require('cors');
 const express = require('express');
 const { get } = require("http");
-
 const app = express();
 app.use(cors());
 const port = 3000
