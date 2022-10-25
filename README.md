@@ -1,15 +1,5 @@
 # vuether
 
-## Weather Web App built with Vue and OpenWeather API
-
-## Start
-
-###
-
-`npm install`
-
-###
-
-`npm i axios`
-
-#### for API Calls
+```npm i```
+```node ./src/server.js```
+## Open in path of index.html in browser
