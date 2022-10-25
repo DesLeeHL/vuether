@@ -24,8 +24,8 @@ const min_max = (arr) => {
     const max = kel_to_cel(Math.max(...arr));
     return { min: min, max: max }
 }
-const min = arr=> (Math.min(...arr));
-const max = arr=> (Math.max(...arr));
+const min = arr => (Math.min(...arr));
+const max = arr => (Math.max(...arr));
 
 
 app.get('/', (req, res) => res.send('Weather App Server Side'));
@@ -48,26 +48,28 @@ function getMaskAdvice(airPollutionData) {
 
 // Temperature Analysis - hot/mild/cold
 function getTempSentiment(forecastData) {
-    let max = 0;
-    let min = forecastData[Object.keys(forecastData)[0]].avgTemp;
-    let weatherType = null;
+    let max = forecastData[Object.keys(forecastData)[0]].maxTemp;
+    let min = forecastData[Object.keys(forecastData)[0]].minTemp;
+    let tempFeel = null;
 
     let tempRange = {};
 
     for (date in forecastData) {
-        tempRange = forecastData[date].tempRange;
-        if (tempRange.max >= max)
-            max = tempRange.max;
-        if (tempRange.min <= min)
-            min = tempRange.min;
+        currMinTemp = forecastData[date].minTemp;
+        currMaxTemp = forecastData[date].maxTemp;
+
+        if (currMinTemp <= min)
+            min = currMinTemp;
+        if (currMaxTemp >= max)
+            max = currMaxTemp;
     }
 
-    if (max > 24) weatherType = "hot";
-    else if (min >= 12 && max <= 24) weatherType = "mild";
-    else weatherType = "cold";
+    if (max > 24) tempFeel = "hot";
+    else if (min >= 12 && max <= 24) tempFeel = "mild";
+    else tempFeel = "cold";
 
     return {
-        weatherType: weatherType,
+        tempFeel: tempFeel,
         max: max,
         min: min
     }
@@ -106,17 +108,17 @@ function getForecast(req, res) {
                 if (!forecastData[date]) {
                     days++;
                     forecastData[date] = {
-                        temperatures: [],
-                        tempMins:[],
-                        tempMaxs:[],
+                        temperaturesK: [],
+                        tempMinsK: [],
+                        tempMaxsK: [],
                         windSpeeds: [],
                         rainfallLevels: []
                     }
                 }
 
-                forecastData[date].temperatures.push(fetchedWeatherData[weatherEntry].main.temp);
-                forecastData[date].tempMins.push(fetchedWeatherData[weatherEntry].main.temp_min);
-                forecastData[date].tempMaxs.push(fetchedWeatherData[weatherEntry].main.temp_max);
+                forecastData[date].temperaturesK.push(fetchedWeatherData[weatherEntry].main.temp);
+                forecastData[date].tempMinsK.push(fetchedWeatherData[weatherEntry].main.temp_min);
+                forecastData[date].tempMaxsK.push(fetchedWeatherData[weatherEntry].main.temp_max);
                 forecastData[date].windSpeeds.push(fetchedWeatherData[weatherEntry].wind.speed);
 
                 // Check if there is any rain
@@ -152,10 +154,10 @@ function getForecast(req, res) {
             //  Calculating averages once compiled
 
             for (date in forecastData) {
-                forecastData[date].avgTemp = kel_to_cel(average(forecastData[date].temperatures));
-                forecastData[date].tempRange = min_max(forecastData[date].temperatures);
-                forecastData[date].minTemp=kel_to_cel(min(forecastData[date].tempMins));
-                forecastData[date].maxTemp=kel_to_cel(max(forecastData[date].tempMaxs));
+                forecastData[date].avgTemp = kel_to_cel(average(forecastData[date].temperaturesK));
+                //Getting min/max temperature by getting min/max of each day's min/max temps 
+                forecastData[date].minTemp = kel_to_cel(min(forecastData[date].tempMinsK));
+                forecastData[date].maxTemp = kel_to_cel(max(forecastData[date].tempMaxsK));
                 forecastData[date].avgWind = average(forecastData[date].windSpeeds);
                 forecastData[date].rainfallLevels = sum(forecastData[date].rainfallLevels);
 
@@ -165,7 +167,7 @@ function getForecast(req, res) {
                 if (airPollutionData[date].pm2_5 !== null && airPollutionData[date].pm2_5 !== undefined)
                     airPollutionData[date].avgPM2_5 = average(airPollutionData[date].pm2_5);
             }
-            // Get overall temperature weatherType and air pollution analysis
+            // Get overall temperature tempSentiment and air pollution analysis
             tempSentiment = getTempSentiment(forecastData);
             maskAdvised = getMaskAdvice(airPollutionData);
 

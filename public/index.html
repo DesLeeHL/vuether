@@ -110,12 +110,12 @@ TODO:
         <div v-if="!hasError && tempSentiment != null">
             
             <h2>👔 What kind of clothes should I pack?</h2>
-            <span v-if="tempSentiment.weatherType == 'hot'">🥵Hot weather({{tempSentiment.min}}°C - {{tempSentiment.max}}°C).
+            <span v-if="tempSentiment.tempFeel == 'hot'">🥵Hot weather({{tempSentiment.min}}°C - {{tempSentiment.max}}°C).
                 <br/>👕 Pack some light cloths and stay hydrated!
             </span>
-            <span v-if="tempSentiment.weatherType == 'mild'">🤗Mild weather({{tempSentiment.min}}°C - {{tempSentiment.max}}°C).
+            <span v-if="tempSentiment.tempFeel == 'mild'">🤗Mild weather({{tempSentiment.min}}°C - {{tempSentiment.max}}°C).
                 <br/>👘 Pack a few extra layers just in case.</span>
-            <span v-if="tempSentiment.weatherType == 'cold'">🥶Cold weather({{tempSentiment.min}}°C - {{tempSentiment.max}}°C).
+            <span v-if="tempSentiment.tempFeel == 'cold'">🥶Cold weather({{tempSentiment.min}}°C - {{tempSentiment.max}}°C).
                 <br/>🏂 Pack some warm clothes and maybe enjoy a hot cuppa.</span>
             
         </div>
@@ -133,26 +133,22 @@ TODO:
             <thead>
                 <tr>
                     <th>📆</th>
-                    <th>Real Lowest 🌡️(°C)</th>
                     <th>Lowest 🌡️(°C)</th>
                     <th>Avg.🌡️ (°C)</th>
                     <th>Highest 🌡️(°C)</th>
-                    <th>Real LowestHighest 🌡️(°C)</th>
                     <th>☴(m/s)</th>
                     <th>☔(mm)</th>
                 </tr>
             </thead>
             <tbody>
-                <template v-for="(forecastData, date) in weatherJSON">
+                <template v-for="(dayForecastData, date) in weatherJSON">
                     <tr>
                         <td>|<u>{{ date }}</u></td>
-                        <td>|<u>{{ forecastData.minTemp }}</u></td>
-                        <td>|<u>{{ forecastData.tempRange.min }}</u></td>
-                        <td>|<u>{{ forecastData.avgTemp }}</u></td>
-                        <td>|<u>{{ forecastData.tempRange.max }}</u></td>
-                        <td>|<u>{{ forecastData.maxTemp }}</u></td>
-                        <td>|<u>{{ forecastData.avgWind }}</u></td>
-                        <td>|<u>{{ forecastData.rainfallLevels }}</u></td>
+                        <td>|<u>{{ dayForecastData.minTemp }}</u></td>
+                        <td>|<u>{{ dayForecastData.avgTemp }}</u></td>
+                        <td>|<u>{{ dayForecastData.maxTemp }}</u></td>
+                        <td>|<u>{{ dayForecastData.avgWind }}</u></td>
+                        <td>|<u>{{ dayForecastData.rainfallLevels }}</u></td>
                     </tr>
                 </template>
             </tbody>
@@ -166,10 +162,10 @@ TODO:
                 </tr>
             </thead>
             <tbody>
-                <template v-for="(airPolData, date) in airPolJSON">
+                <template v-for="(dayAirPolData, date) in airPolJSON">
                     <tr>
                         <td>|<u>{{ date }}</u></td>
-                        <td>|<u>{{ airPolData.avgPM2_5 }}</u></td>
+                        <td>|<u>{{ dayAirPolData.avgPM2_5 }}</u></td>
                         <!-- <td>|<u>{{ airPolData.pm2_5 }}</u></td> -->
                     </tr>
                 </template>
