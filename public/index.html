@@ -38,11 +38,11 @@ TODO:
             data() {
                 return {
                     city: '',
-                    isError: false,
+                    hasError: false,
                     errorMsg: '',
                     weatherJSON: null,
                     willRain: null,
-                    maskAdvice: null,
+                    maskAdvised: null,
                     tempSentiment: null,
                 }
             },
@@ -60,18 +60,18 @@ TODO:
                             this.weatherJSON = responseJSON.forecastData;
                             this.tempSentiment = responseJSON.tempSentiment;
                             this.willRain = responseJSON.willRain;
-                            this.maskAdvice = responseJSON.maskAdvice;
+                            this.maskAdvised = responseJSON.maskAdvised;
 
                             // Reset any errors
-                            this.isError = false;
+                            this.hasError = false;
                             this.errorMsg = '';
                         })
                         .catch(error => {
                             console.error(error);
 
                             // Set error messages
-                            this.isError = true;
-                            this.errorMsg = `Unable to fetch weather data for ${this.city}`;
+                            this.hasError = true;
+                            this.errorMsg = `Can't fetch weather data for ${this.city} :(`;
                         });
                 }
             }
@@ -83,85 +83,76 @@ TODO:
     <div id="app">
         <h1>Vuether</h1>
         <br />
-        <p>Please enter the city name for the weather forecast:</p>
+        <h2>Enter city name for weather forecast of the next four days:</h2>
         <div>
             <div>
                 <input v-model="city" type="text" v-model="city"
-                    placeholder="Enter a city name..." required />
+                    placeholder="City..." required />
             </div>
-            <button v-on:click="getWeatherForecast">
-                <svg aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                </svg>Search
-            </button>
+            <button v-on:click="getWeatherForecast">Search</button>
         </div>
 
 
         <!-- <button v-on:click="getWeatherForecast"
             class="h-10 px-6 font-semibold rounded-full bg-violet-600 text-white">Show me the weather!</button> -->
-        <span v-if="isError">
+        <span v-if="hasError">
             <br />
             <br />
-            <font color="red">{{errorMsg}}</font>
+            <font color="red">Error: {{errorMsg}}</font>
         </span>
 
-        <!-- Rain Packing Tips -->
-        <div v-if="!isError && willRain != null">
+        <!-- Umbrella Packing Tips -->
+        <div v-if="!hasError && willRain != null">
             <p>
-            <h2>☔ Rain:</h2>
-            <span v-if="willRain">Pack an Umbrella, it might rain.</span>
-            <span v-if="!willRain">No need to pack an Umbrella, it doesn't look like it's gonna rain.</span>
+            <h2>🌂 Should I bring an umbrella?</h2>
+            <span v-if="willRain">☔ Bring an umbrella with ya, you don't wanna get soaked.</span>
+            <span v-if="!willRain">🌞 Keep your umbrella at home, and enjoy some sunny days, or maybe cloudy.</span>
             </p>
         </div>
 
-        <!-- Weather Type Packing Tips -->
-        <div v-if="!isError && tempSentiment != null">
+        <!-- Clothes Packing Tips by Temperature Sentiment-->
+        <div v-if="!hasError && tempSentiment != null">
             <p>
-            <h2>👔 Packing:</h2>
-            <span v-if="tempSentiment.weatherType == 'hot'">It's gonna be hot (more than 20°C). Pack light
-                clothes to keep cool.</span>
-            <span v-if="tempSentiment.weatherType == 'warm'">It's gonna be warm({{tempSentiment.max}}°C -
-                {{tempSentiment.min}}°C). Pack some extra layers incase it gets colder.</span>
-            <span v-if="tempSentiment.weatherType == 'cold'">It's gonna be cold
-                ({{tempSentiment.max}}°C - {{tempSentiment.min}}°C). Pack some winter clothes to keep
-                warm.</span>
+            <h2>👔 What kind of clothes should I pack?</h2>
+            <span v-if="tempSentiment.weatherType == 'hot'">🥵Hot weather({{tempSentiment.min}}°C - {{tempSentiment.max}}°C).
+                <br/>👕 Pack some light cloths and stay hydrated!
+            </span>
+            <span v-if="tempSentiment.weatherType == 'mild'">🤗Mild weather({{tempSentiment.min}}°C - {{tempSentiment.max}}°C).
+                <br/>👘 Pack a few extra layers just in case.</span>
+            <span v-if="tempSentiment.weatherType == 'cold'">🥶Cold weather({{tempSentiment.min}}°C - {{tempSentiment.max}}°C).
+                <br/>🏂 Pack some warm clothes and maybe have a hot cuppa.</span>
             </p>
         </div>
 
-        <!-- Mask Advice -->
-        <div v-if="!isError && maskAdvice != null">
+        <!-- Masking tips -->
+        <div v-if="!hasError && maskAdvised != null">
             <p>
-            <h2>😷 Mask Advice: </h2>
-            <span v-if="maskAdvice">High Air Pollution Expected (PM2_5 > 10). You should wear a Mask
-                outside.</span>
-            <span v-if="!maskAdvice">There is not much air pollution these dates. No need to wear a mask!</span>
+            <h2>🏭 Should I wear a mask?</h2>
+            <span v-if="maskAdvised">😷 The air quality is going to be rough. You should wear a mask!</span>
+            <span v-if="!maskAdvised">😃 The air quality is going be good. Enjoy the fresh air!</span>
             </p>
         </div>
 
-        <table v-if="!isError && weatherJSON">
+        <table v-if="!hasError && weatherJSON">
             <thead>
                 <tr>
-                    <th scope="col" class="border border-slate-300">Date</th>
-                    <th scope="col" class="border border-slate-300">Avg. Temperature (°C)</th>
-                    <th scope="col" class="border border-slate-300">Highest (°C)</th>
-                    <th scope="col" class="border border-slate-300">Lowest (°C)</th>
-                    <th scope="col" class="border border-slate-300">Wind Speed (m/s)</th>
-                    <th scope="col" class="border border-slate-300">Air Pollution PM2_5</th>
-                    <th scope="col" class="border border-slate-300">Rainfall Level (mm)</th>
+                    <th>📆</th>
+                    <th>Lowest 🌡️(°C)</th>
+                    <th>Avg.🌡️ (°C)</th>
+                    <th>Highest 🌡️(°C)</th>
+                    <th>☴(m/s)</th>
+                    <th>⛆(mm)</th>
                 </tr>
             </thead>
             <tbody>
                 <template v-for="(forecast, date) in weatherJSON">
                     <tr>
-                        <td scope="row" class="border">{{ date }}</td>
-                        <td class="border">{{ forecast.avgTemp }}</td>
-                        <td class="border">{{ forecast.temperatureRange.min }}</td>
-                        <td class="border">{{ forecast.temperatureRange.max }}</td>
-                        <td class="border">{{ forecast.avgWind }}</td>
-                        <td class="border">{{ forecast.avgPM2_5 }}</td>
-                        <td class="border">{{ forecast.rainfallLevels }}</td>
+                        <td>|<u>{{ date }}</u></td>
+                        <td>|<u>{{ forecast.tempRange.min }}</u></td>
+                        <td>|<u>{{ forecast.avgTemp }}</u></td>
+                        <td>|<u>{{ forecast.tempRange.max }}</u></td>
+                        <td>|<u>{{ forecast.avgWind }}</u></td>
+                        <td>|<u>{{ forecast.rainfallLevels }}</u></td>
                     </tr>
                 </template>
             </tbody>
