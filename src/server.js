@@ -22,7 +22,20 @@ function dtToDate(dt) {
     date.setHours(0, 0, 0, 0);
     return date.toLocaleDateString();
 }
-
+//get timeZone from DT dt
+function timezoneFromDT(dt){
+    let sign = 1;
+    if(dt<0) sign = -1;
+    let date=new Date(Math.abs(dt)*1000);
+    let hr = date.getHours()-1;
+    return hr*sign;
+}
+//get hour and minute from dt
+function timeFromDT(dt){
+    let date=new Date(dt*1000);
+    let hrMin = date.getHours()+':'+date.getMinutes();
+    return hrMin;
+}
 app.get('/', (req, res) => res.send('Vuether Backend'));
 app.get('/forecast/:city', getForecast);
 app.listen(port, () => console.log(`Vuether listening on port ${port}!`));
@@ -76,12 +89,27 @@ function getForecast(req, res) {
     var willRain = false;
     var cityLat = 0;
     var cityLon = 0;
+    var cityInfo={}
 
     axios.get(`${URL_base}/forecast?q=${city}&APPID=${API_key}`).then(
         (response) => {
             const { lat, lon } = response.data.city.coord;
             cityLat = lat;
             cityLon = lon;
+
+            //Innovative Feature
+            //get city information
+            cityInfo.name=response.data.city.name;
+            cityInfo.country=response.data.city.country
+            cityInfo.lat=lat;
+            cityInfo.lon=lon;
+            cityInfo.timeZone=timezoneFromDT(response.data.city.timezone);
+            console.log("TimeZOne:",response.data.city.timezone)
+            console.log("SR:",response.data.city.sunrise)
+            console.log("SR:",response.data.city.sunset)
+
+            cityInfo.sunRise=timeFromDT(response.data.city.sunrise+response.data.city.timezone-3600);
+            cityInfo.sunSet=timeFromDT(response.data.city.sunset+response.data.city.timezone-3600);
 
             var fetchedWeatherData = response.data.list;
 
@@ -159,7 +187,8 @@ function getForecast(req, res) {
                 willRain: willRain,
                 tempSentiment: tempSentiment,
                 maskAdvised: maskAdvised,
-                airPollutionData: airPollutionData
+                airPollutionData: airPollutionData,
+                cityInfo: cityInfo
             })
 
         }).catch((error) => {
