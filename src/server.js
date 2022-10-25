@@ -32,14 +32,16 @@ app.get('/forecast/:city', getForecast);
 
 app.listen(port, () => console.log(`Weather app listening on port ${port}!`));
 
-//PM2_5 Analysis, mask advised if any day PM2_5 exceeds 10
+//PM2_5 Analysis, mask advised if any day's avg PM2_5 exceeds 10
 function getMaskAdvice(airPollutionData) {
     for (date in airPollutionData) {
-        if (!airPollutionData[date].pm2_5 === null && !airPollutionData[date].pm2_5 === undefined
-            && airPollutionData[date].pm2_5>10)
-                return true;
-        return false;
+        if (airPollutionData[date].avgPM2_5 !== null && airPollutionData[date].avgPM2_5 !== undefined
+            && airPollutionData[date].avgPM2_5 > 10) {
+            console.log(airPollutionData[date].avgPM2_5);
+            return true;
+        }
     }
+    return false;
 }
 
 // Temperature Analysis - hot/mild/cold
@@ -152,9 +154,13 @@ function getForecast(req, res) {
                 forecastData[date].tempRange = min_max(forecastData[date].temperatures);
                 forecastData[date].avgWind = average(forecastData[date].windSpeeds);
                 forecastData[date].rainfallLevels = sum(forecastData[date].rainfallLevels);
-                
+
             }
 
+            for (date in airPollutionData) {
+                if (airPollutionData[date].pm2_5 !== null && airPollutionData[date].pm2_5 !== undefined)
+                    airPollutionData[date].avgPM2_5 = average(airPollutionData[date].pm2_5);
+            }
             // Get overall temperature weatherType and air pollution analysis
             tempSentiment = getTempSentiment(forecastData);
             maskAdvised = getMaskAdvice(airPollutionData);
@@ -165,7 +171,8 @@ function getForecast(req, res) {
                 forecastData: forecastData,
                 willRain: willRain,
                 tempSentiment: tempSentiment,
-                maskAdvised: maskAdvised
+                maskAdvised: maskAdvised,
+                airPollutionData: airPollutionData
             })
 
 

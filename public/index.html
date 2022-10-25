@@ -44,6 +44,7 @@ TODO:
                     willRain: null,
                     maskAdvised: null,
                     tempSentiment: null,
+                    airPolJSON:null
                 }
             },
             methods: {
@@ -58,10 +59,10 @@ TODO:
                         }).then(responseJSON => {
                             console.log(responseJSON);
                             this.weatherJSON = responseJSON.forecastData;
-                            this.tempSentiment = responseJSON.tempSentiment;
                             this.willRain = responseJSON.willRain;
+                            this.tempSentiment = responseJSON.tempSentiment;
                             this.maskAdvised = responseJSON.maskAdvised;
-
+                            this.airPolJSON=responseJSON.airPollutionData;
                             // Reset any errors
                             this.hasError = false;
                             this.errorMsg = '';
@@ -153,6 +154,24 @@ TODO:
                         <td>|<u>{{ forecast.tempRange.max }}</u></td>
                         <td>|<u>{{ forecast.avgWind }}</u></td>
                         <td>|<u>{{ forecast.rainfallLevels }}</u></td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+        <table v-if="!hasError&&airPolJSON">
+            <thead>
+                <tr>
+                    <th>📆</th>
+                    <th>avgPM2_5</th>
+                    <th>pm2_5</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template v-for="(airPolData, date) in airPolJSON">
+                    <tr>
+                        <td>|<u>{{ date }}</u></td>
+                        <td>|<u>{{ airPolData.avgPM2_5 }}</u></td>
+                        <td>|<u>{{ airPolData.pm2_5 }}</u></td>
                     </tr>
                 </template>
             </tbody>
