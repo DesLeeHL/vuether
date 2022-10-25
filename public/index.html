@@ -26,7 +26,8 @@
                     willRain: null,
                     maskAdvised: null,
                     tempSentiment: null,
-                    airPolJSON: null
+                    airPolJSON: null,
+                    cityJSON:null
                 }
             },
             methods: {
@@ -44,6 +45,7 @@
                             this.tempSentiment = responseJSON.tempSentiment;
                             this.maskAdvised = responseJSON.maskAdvised;
                             this.airPolJSON = responseJSON.airPollutionData;
+                            this.cityJSON = responseJSON.cityInfo;
                             // Clear errors
                             this.hasError = false;
                             this.errorMsg = '';
@@ -76,7 +78,14 @@
         <span v-if="hasError">
             Error: {{errorMsg}}
         </span>
-
+        <!-- Innovative Feature City Information -->
+        <div v-if="!hasError && cityJSON!= null">
+            <h1>{{cityJSON.name}},{{cityJSON.country}}</h1>
+            <h3>Latitude: {{cityJSON.lat}}, Longitude: {{cityJSON.lon}}</h3>
+            <h3 v-if="cityJSON.timeZone<0">Time Zone: GMT {{cityJSON.timeZone}}</h3>
+            <h3 v-else>Time Zone: GMT +{{cityJSON.timeZone}}</h3>
+            <h3>Sunrise: {{cityJSON.sunRise}}, Sunset: {{cityJSON.sunSet}} (Local Time)</h3>
+        </div>
         <!-- Umbrella Packing Tips -->
         <div v-if="!hasError && willRain != null">
 
