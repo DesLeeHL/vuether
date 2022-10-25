@@ -16,6 +16,12 @@ const sum = arr => (arr.reduce((p, c) => p + c, 0)).toFixed(2);
 const kel_to_cel = k => Math.round((k - 273.12) * 100) / 100;
 const min = arr => (Math.min(...arr));
 const max = arr => (Math.max(...arr));
+// formatting date from seconds
+function dtToDate(dt) {
+    let date = new Date(dt * 1000);
+    date.setHours(0, 0, 0, 0);
+    return date.toLocaleDateString();
+}
 
 app.get('/', (req, res) => res.send('Vuether Backend'));
 app.get('/forecast/:city', getForecast);
@@ -82,10 +88,7 @@ function getForecast(req, res) {
             // Loop through forecast of each day
             var days = 0
             for (weatherEntry in fetchedWeatherData) {
-                // formatting date from seconds
-                let date = new Date(response.data.list[weatherEntry].dt * 1000);
-                date.setHours(0, 0, 0, 0);
-                date = date.toLocaleDateString();
+                date = dtToDate(response.data.list[weatherEntry].dt);
                 // Forecast for only today and the next 4 days
                 if (days > 4) break;
                 // Init forecast data for a day if undefined or null
@@ -120,9 +123,7 @@ function getForecast(req, res) {
             const fetchedAirPollutionData = responseAirPol.data.list;
             var days = 0
             for (airPollutionEntry of fetchedAirPollutionData) {
-                let date = new Date(airPollutionEntry.dt * 1000);
-                date.setHours(0, 0, 0, 0);
-                date = date.toLocaleDateString();
+                date = dtToDate(airPollutionEntry.dt);
                 // Air pollution next 5 days
                 if (days > 5) break;
                 // Init air pollution data if undefined or null
