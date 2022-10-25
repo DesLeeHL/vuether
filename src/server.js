@@ -24,6 +24,8 @@ const min_max = (arr) => {
     const max = kel_to_cel(Math.max(...arr));
     return { min: min, max: max }
 }
+const min = arr=> (Math.min(...arr));
+const max = arr=> (Math.max(...arr));
 
 
 app.get('/', (req, res) => res.send('Weather App Server Side'));
@@ -105,13 +107,17 @@ function getForecast(req, res) {
                     days++;
                     forecastData[date] = {
                         temperatures: [],
+                        tempMins:[],
+                        tempMaxs:[],
                         windSpeeds: [],
                         rainfallLevels: []
                     }
                 }
 
-                forecastData[date].windSpeeds.push(fetchedWeatherData[weatherEntry].wind.speed);
                 forecastData[date].temperatures.push(fetchedWeatherData[weatherEntry].main.temp);
+                forecastData[date].tempMins.push(fetchedWeatherData[weatherEntry].main.temp_min);
+                forecastData[date].tempMaxs.push(fetchedWeatherData[weatherEntry].main.temp_max);
+                forecastData[date].windSpeeds.push(fetchedWeatherData[weatherEntry].wind.speed);
 
                 // Check if there is any rain
                 if (fetchedWeatherData[weatherEntry].rain && fetchedWeatherData[weatherEntry].rain['3h']) {
@@ -139,19 +145,17 @@ function getForecast(req, res) {
                         pm2_5: []
                     }
                 }
-                // console.log(airPollutionEntry.components.pm2_5)
                 airPollutionData[date].pm2_5.push(parseInt(airPollutionEntry.components.pm2_5))
-                // console.log(`${date} - PM2_5 - ${airPollutionEntry.components.pm2_5}`)
             }
 
 
             //  Calculating averages once compiled
 
             for (date in forecastData) {
-
-                // console.log(fetchedAirPollutionData[date].pm2_5)
                 forecastData[date].avgTemp = kel_to_cel(average(forecastData[date].temperatures));
                 forecastData[date].tempRange = min_max(forecastData[date].temperatures);
+                forecastData[date].minTemp=kel_to_cel(min(forecastData[date].tempMins));
+                forecastData[date].maxTemp=kel_to_cel(max(forecastData[date].tempMaxs));
                 forecastData[date].avgWind = average(forecastData[date].windSpeeds);
                 forecastData[date].rainfallLevels = sum(forecastData[date].rainfallLevels);
 
