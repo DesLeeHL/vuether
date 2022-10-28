@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>☁️Vuether🌡️</title>
+    <!-- Include Vue -->
+    <script type="importmap">
+        {
+            "imports": {
+                "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js"
+            }
+        }
+    </script>
+    <script type="module">
+        import { createApp } from 'vue'
+        createApp({
+            data() {
+                return {
+                    city: '',
+                    hasError: false,
+                    errorMsg: '',
+                    weatherJSON: null,
+                    willRain: null,
+                    maskAdvised: null,
+                    tempSentiment: null,
+                    airPolJSON: null,
+                    cityJSON:null
+                }
+            },
+            methods: {
+                getWeatherForecast() {
+                    console.log(`Requesting weather forecast for ${this.city} from OpenWeather...`);
+
+                    fetch(`http://localhost:3000/forecast/${this.city}`)
+                        .then((response) => {
+                            if (response.status === 200) return response.json();
+                            else throw Error(response.statusText);
+                        }).then(responseJSON => {
+                            console.log(responseJSON);
+                            this.weatherJSON = responseJSON.forecastData;
+                            this.willRain = responseJSON.willRain;
+                            this.tempSentiment = responseJSON.tempSentiment;
+                            this.maskAdvised = responseJSON.maskAdvised;
+                            this.airPolJSON = responseJSON.airPollutionData;
+                            this.cityJSON = responseJSON.cityInfo;
+                            // Clear errors
+                            this.hasError = false;
+                            this.errorMsg = '';
+                        })
+                        .catch(error => {
+                            console.error(error);
+
+                            // Set error
+                            this.hasError = true;
+                            this.errorMsg = `Can't fetch weather data for ${this.city} :(`;
+                        });
+                }
+            }
+        }).mount('#app')
+    </script>
+</head>
+
+<body>
+    <div id="app">
+        <h1>☁️Vuether🌡️</h1>
+        <br />
+        <h2>Enter city name for today's weather and its forecast for the next four days:</h2>
+        <div>
+            <div>
+                <input v-model="city" type="text" v-model="city" placeholder="City..." required />
+            </div>
+            <button v-on:click="getWeatherForecast">Search🔍</button>
+        </div>
+
+        <span v-if="hasError">
+            Error: {{errorMsg}}
+        </span>
+        <!-- Innovative Feature City Information -->
+        <div v-if="!hasError && cityJSON!= null">
+            <h1>{{cityJSON.name}}, {{cityJSON.country}}</h1>
+            <h3>Latitude: {{cityJSON.lat}}, Longitude: {{cityJSON.lon}}</h3>
+            <h3 v-if="cityJSON.timeZone<0">Time Zone: GMT {{cityJSON.timeZone}}</h3>
+            <h3 v-else>Time Zone: GMT +{{cityJSON.timeZone}}</h3>
+            <h3>Sunrise: {{cityJSON.sunRise}}, Sunset: {{cityJSON.sunSet}} (Local Time)</h3>
+        </div>
+        <!-- Umbrella Packing Tips -->
+        <div v-if="!hasError && willRain != null">
+
+            <h2>🌂 Should I bring an umbrella? ☔</h2>
+            <span v-if="willRain">☔ Bring an umbrella with ya, you don't wanna get soaked. 💦</span>
+            <span v-if="!willRain">🌞 Keep your umbrella at home, and enjoy some sunny days, or maybe cloudy. ⛅</span>
+
+        </div>
+
+        <!-- Clothes Packing Tips by Temperature Sentiment-->
+        <div v-if="!hasError && tempSentiment != null">
+
+            <h2>👔 What kind of clothes should I pack? 🧳</h2>
+            <span v-if="tempSentiment.tempFeel == 'hot'">🥵Hot weather({{tempSentiment.min}}°C -
+                {{tempSentiment.max}}°C).
+                <br />👕 Pack some light cloths and stay hydrated! 💧
+            </span>
+            <span v-if="tempSentiment.tempFeel == 'mild'">🤗Mild weather({{tempSentiment.min}}°C -
+                {{tempSentiment.max}}°C).
+                <br />👘 Pack a few extra layers just in case. 🍃</span>
+            <span v-if="tempSentiment.tempFeel == 'cold'">🥶Cold weather({{tempSentiment.min}}°C -
+                {{tempSentiment.max}}°C).
+                <br />🏂 Pack some warm clothes and maybe enjoy a hot cuppa. ☕</span>
+
+        </div>
+
+        <!-- Masking tips -->
+        <div v-if="!hasError && maskAdvised != null">
+
+            <h2>🏭 Should I wear a mask? 🫁</h2>
+            <span v-if="maskAdvised">😷 The air quality is going to be rough. You should wear a mask!</span>
+            <span v-if="!maskAdvised">😃 The air quality is going be good. Enjoy the fresh air!</span>
+
+        </div>
+
+
+        <div v-if="!hasError && weatherJSON">
+            <h2>☁️Next 4 Days Weather Forecast🌡️</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>📆</th>
+                        <th>Lowest 🌡️(°C)</th>
+                        <th>Avg.🌡️ (°C)</th>
+                        <th>Highest 🌡️(°C)</th>
+                        <th>🌬️(m/s)</th>
+                        <th>☔(mm)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template v-for="(dayForecastData, date) in weatherJSON">
+                        <tr>
+                            <td>|<u>{{ date }}</u></td>
+                            <td>|<u>{{ dayForecastData.minTemp }}</u></td>
+                            <td>|<u>{{ dayForecastData.avgTemp }}</u></td>
+                            <td>|<u>{{ dayForecastData.maxTemp }}</u></td>
+                            <td>|<u>{{ dayForecastData.avgWind }}</u></td>
+                            <td>|<u>{{ dayForecastData.rainfallLevels }}</u></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+        <div v-if="!hasError&&airPolJSON">
+            <h2>🫁 Next 5 Days Air Pollution 🏭
+                <h3>Remember to bring a mask if any day's PM2_5 is over 10!</h3>
+            </h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>📆</th>
+                        <th>Daily Average PM2_5</th>
+                        <!-- <th>pm2_5</th> -->
+                    </tr>
+                </thead>
+                <tbody>
+                    <template v-for="(dayAirPolData, date) in airPolJSON">
+                        <tr>
+                            <td>|<u>{{ date }}</u></td>
+                            <td>|<u>{{ dayAirPolData.avgPM2_5 }}</u></td>
+                            <!-- <td>|<u>{{ airPolData.pm2_5 }}</u></td> -->
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+
+</html>
