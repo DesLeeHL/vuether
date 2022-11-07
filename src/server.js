@@ -5,6 +5,7 @@ const express = require('express');
 const { get } = require("http");
 const app = express();
 app.use(cors());
+const path = require('path');
 const port = 3000
 
 const URL_base = `https://api.openweathermap.org/data/2.5`
@@ -40,7 +41,7 @@ function timeFromDT(dt) {
     let hrMin = hours + ':' + mins;
     return hrMin;
 }
-app.get('/', (req, res) => res.send('Vuether Backend'));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../public/index.html')));
 app.get('/forecast/:city', getForecast);
 app.listen(port, () => console.log(`Vuether listening on port ${port}!`));
 
