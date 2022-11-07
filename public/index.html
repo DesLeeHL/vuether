@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -26,14 +27,14 @@
                     maskAdvised: null,
                     tempSentiment: null,
                     airPolJSON: null,
-                    cityJSON:null
+                    cityJSON: null
                 }
             },
             methods: {
                 getWeatherForecast() {
                     console.log(`Requesting weather forecast for ${this.city} from OpenWeather...`);
 
-                    fetch(`http://localhost:3000/forecast/${this.city}`)
+                    fetch(`/forecast/${this.city}`)
                         .then((response) => {
                             if (response.status === 200) return response.json();
                             else throw Error(response.statusText);
