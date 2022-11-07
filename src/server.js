@@ -23,17 +23,21 @@ function dtToDate(dt) {
     return date.toLocaleDateString();
 }
 //get timeZone from DT dt
-function timezoneFromDT(dt){
+function timezoneFromDT(dt) {
     let sign = 1;
-    if(dt<0) sign = -1;
-    let date=new Date(Math.abs(dt)*1000);
-    let hr = date.getHours()-1;
-    return hr*sign;
+    if (dt < 0) sign = -1;
+    let date = new Date(Math.abs(dt) * 1000);
+    let hr = date.getHours() - 1;
+    return hr * sign;
 }
 //get hour and minute from dt
-function timeFromDT(dt){
-    let date=new Date(dt*1000);
-    let hrMin = date.getHours()+':'+date.getMinutes();
+function timeFromDT(dt) {
+    let date = new Date(dt * 1000);
+    let hours = date.getHours();
+    let mins = date.getMinutes();
+    if (hours < 10) { hours = "0" + hours; }
+    if (mins < 10) { mins = "0" + mins; }
+    let hrMin = hours + ':' + mins;
     return hrMin;
 }
 app.get('/', (req, res) => res.send('Vuether Backend'));
@@ -45,7 +49,7 @@ function getMaskAdvice(airPollutionData) {
     for (date in airPollutionData) {
         if (airPollutionData[date].avgPM2_5 !== null && airPollutionData[date].avgPM2_5 !== undefined
             && airPollutionData[date].avgPM2_5 > 10) {
-            console.log(airPollutionData[date].avgPM2_5);
+            //console.log(airPollutionData[date].avgPM2_5);
             return true;
         }
     }
@@ -89,7 +93,7 @@ function getForecast(req, res) {
     var willRain = false;
     var cityLat = 0;
     var cityLon = 0;
-    var cityInfo={}
+    var cityInfo = {}
 
     axios.get(`${URL_base}/forecast?q=${city}&APPID=${API_key}`).then(
         (response) => {
@@ -99,17 +103,17 @@ function getForecast(req, res) {
 
             //Innovative Feature
             //get city information
-            cityInfo.name=response.data.city.name;
-            cityInfo.country=response.data.city.country
-            cityInfo.lat=lat;
-            cityInfo.lon=lon;
-            cityInfo.timeZone=timezoneFromDT(response.data.city.timezone);
-            console.log("TimeZOne:",response.data.city.timezone)
-            console.log("SR:",response.data.city.sunrise)
-            console.log("SR:",response.data.city.sunset)
+            cityInfo.name = response.data.city.name;
+            cityInfo.country = response.data.city.country
+            cityInfo.lat = lat;
+            cityInfo.lon = lon;
+            cityInfo.timeZone = timezoneFromDT(response.data.city.timezone);
+            // console.log("TimeZone:",response.data.city.timezone)
+            // console.log("Sunrise:",response.data.city.sunrise)
+            // console.log("Sunset:",response.data.city.sunset)
 
-            cityInfo.sunRise=timeFromDT(response.data.city.sunrise+response.data.city.timezone-3600);
-            cityInfo.sunSet=timeFromDT(response.data.city.sunset+response.data.city.timezone-3600);
+            cityInfo.sunRise = timeFromDT(response.data.city.sunrise + response.data.city.timezone);
+            cityInfo.sunSet = timeFromDT(response.data.city.sunset + response.data.city.timezone);
 
             var fetchedWeatherData = response.data.list;
 
